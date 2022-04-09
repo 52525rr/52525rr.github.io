@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head></head>
+    <body>
+    <video id="video"></video>
+    <canvas id="canvas1" style="border:1px solid #d3d3d3;"></canvas>
+    <canvas id="canvas2" style="border:1px solid #d3d3d3;"></canvas>
+    <input type="file", id="input", accept="video/*">
+    <script>
+        video.height=video.width=0
+        WIDTH = 512
+        HEIGHT = WIDTH
+        let cv1 = document.getElementById("canvas1");
+        let ctx1 = cv1.getContext("2d");
+        let imgData =  ctx1.createImageData(WIDTH, HEIGHT);
+
+        let cv2 = document.getElementById("canvas2");
+        let ctx2 = cv2.getContext("2d");
+        let imgData2 = ctx2.createImageData(WIDTH, HEIGHT);
+    </script>
+
+    <p id="F">Input a mp4 file</p>
+    <p id="S">Total size:</p>
+    <p id="demo">"Threshold: 150"</p>
+    <div class="Threshold">
+        <input type="range" min="0" max="1000" value="128" class="slider" id="myRange">
+    </div>
+    <script src="./VIDEO.js"></script>
+    </body>
+</html>
