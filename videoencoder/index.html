@@ -11,22 +11,23 @@
         WIDTH = 512
         HEIGHT = WIDTH
         let cv1 = document.getElementById("canvas1");
-        let ctx1 = cv1.getContext("2d");
+        let ctx1 = cv1.getContext('2d', {willReadFrequently: true});
         let imgData =  ctx1.createImageData(WIDTH, HEIGHT);
 
         let cv2 = document.getElementById("canvas2");
-        let ctx2 = cv2.getContext("2d");
+        let ctx2 = cv2.getContext("2d", {willReadFrequently: true});
         let imgData2 = ctx2.createImageData(WIDTH, HEIGHT);
     </script>
 
-    <p id="F">Input a video file</p>
+    <p id="F">Input a mp4 file</p>
     <p id="S">Total size:</p>
+    <p id="P">Projected size:</p>
 
         <p id="demo">Threshold: 128</p>
-        <input type="range" min="0" max="1000" value="128" class="slider" id="myRange">
+        <input type="range" min="0" max="900" value="128" class="slider" id="myRange" style="width: 700px;">
 
         <p id="demo3">Framerate: 15</p>
-        <input type="range" min="1" max="60" value="15" class="slider" id="myRange3">
+        <input type="range" min="1" max="60" value="15" class="slider" id="myRange3" style="width: 700px;">
         <p id="demo4">Output</p>
         <textarea id="text"name="output" rows="10" cols="87" style="width: 700px;"></textarea>        
 
