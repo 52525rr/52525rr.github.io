@@ -127,7 +127,7 @@ function delta(x, y, s, frame1, frame2){
       temp[0] = (Math.abs(c[0] - l[0])) / dt
       temp[1] = (Math.abs(c[1] - l[1])) / dt
       temp[2] = (Math.abs(c[2] - l[2])) / dt
-      t = Math.max(Math.floor(temp[0]/1), Math.floor(temp[1]/1) , Math.floor(temp[2]/1))
+      t = Math.floor(temp[0]/1) + Math.floor(temp[1]/1) + Math.floor(temp[2]/1)
       sum += t
     }
   }
@@ -135,7 +135,7 @@ function delta(x, y, s, frame1, frame2){
 }
 
 function quadtree(x, y, s){
-  if(delta(x,y,s,frameNow,frameLast) <= 1/256){
+  if(delta(x,y,s,frameNow,frameLast) <= 0){
     return({
       'x': x,
       'y': y,
@@ -164,7 +164,7 @@ function draw(obj,target = ctx2){
   if(!obj.hasOwnProperty('z1')){
     if(obj.color != null){
       a = obj.color
-      target.fillStyle = `rgb(${a[0]},${a[1]},${a[2]})`
+      target.fillStyle = `rgb(${Math.round(a[0])},${Math.round(a[1])},${Math.round(a[2])})`
       target.fillRect(obj.x,obj.y,obj.size,obj.size)
     }
   }else{
@@ -172,6 +172,33 @@ function draw(obj,target = ctx2){
     draw(obj.z2)
     draw(obj.z3)
     draw(obj.z4)
+  }
+}
+
+function setpixel(x,y,val){
+  let i = (y*width + x) * 4
+  treeBuf[i++] = val[0]
+  treeBuf[i++] = val[1]
+  treeBuf[i++] = val[2]
+}
+function setsquare(x,y,s,val){
+  for(let j = y; j < y + s; j++){
+    for(let i = x; i < x + s; i++){
+      setpixel(i,j,val)
+    }
+  }
+}
+
+function draw2(obj){
+  if(!obj.hasOwnProperty('z1')){
+    if(obj.color != null){
+      setsquare(obj.x,obj.y,obj.size,obj.color)
+    }
+  }else{
+    draw2(obj.z1)
+    draw2(obj.z2)
+    draw2(obj.z3)
+    draw2(obj.z4)
   }
 }
 
@@ -211,6 +238,7 @@ video.addEventListener("canplaythrough", async function(){
   let i=0;
   bitstream = ''
   frameLast = ctx2.getImageData(0, 0, width, height).data
+  treeBuf = new Array(4*width*height).fill(0)
 
   while (i<FRAMES){
     i++;
@@ -219,18 +247,18 @@ video.addEventListener("canplaythrough", async function(){
     await new Promise((resolve, reject) => seekResolve = resolve);
 
     ctx1.drawImage(video, 0, 0, width, height)
-    frameTemp = ctx1.getImageData(0, 0, width, height).data
-    frameNow  = frameTemp
-    draw(quadtree(0,0,256))
+    frameNow  = ctx1.getImageData(0, 0, width, height).data
 
-    frameNow = ctx2.getImageData(0, 0, width, height).data
+    draw2(quadtree(0,0,256))
+
+    frameNow = treeBuf.slice()
+    console.log(frameLast)
     frameOut = quadtree(0,0,256)
-    frameLast = ctx2.getImageData(0, 0, width, height).data
 
     draw(frameOut)
-
-    frameNow  = frameTemp
-
+    
+    frameLast = frameNow.slice()
+    treeBuf = ctx2.getImageData(0,0,width,height).data.slice()
     bitstream += encode(frameOut)
     size = bitstream.length
 
