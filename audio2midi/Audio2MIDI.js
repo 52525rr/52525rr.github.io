@@ -29,8 +29,6 @@ function FFT(a){
     }
     let size = 1
     for(let i1 = 0; i1 < q; i1++){
-        twiddleFactorReal = Math.cos(Math.PI / size);
-        twiddleFactorImag = Math.cos(Math.PI / size);
         k = 0;
 
         for(let i2 = 0; i2 < length/size/2; i2++){
@@ -40,8 +38,8 @@ function FFT(a){
 
                 E_Real = ar[k]
                 E_Imag = ai[k]
-                O_Real = ar[k+size]*wr - ai[k+size] * wi;
-                O_Imag = ar[k+size]*wi + ai[k+size] * wr;
+                O_Real = ar[k+size]*wr - ai[k+size]*wi;
+                O_Imag = ar[k+size]*wi + ai[k+size]*wr;
 
                 ar[k]      = E_Real + O_Real;
                 ai[k]      = E_Imag + O_Imag;
@@ -168,9 +166,9 @@ async function processData(v){
 
                 r = ihi - ilo + 1
                 for(let j=ilo; j<ihi; j++){
-                    MIDIframe[j] += (magnitude[i]/r - MIDIframe[j])/(8*Math.sqrt(d))
+                    MIDIframe[j] += (magnitude[i]/r - MIDIframe[j])/(8*Math.sqrt(Math.sqrt(d)))
                 }
-                MIDIframe[index] += (magnitude[i]/r - MIDIframe[index])/(8*Math.sqrt(d))
+                MIDIframe[index] += (magnitude[i]/r - MIDIframe[index])/(8*Math.sqrt(Math.sqrt(d)))
 
             }
             //console.log(MIDIframe.slice())
