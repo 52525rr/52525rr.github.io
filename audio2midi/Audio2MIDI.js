@@ -237,8 +237,9 @@ async function processData(v){
         HTMLwritetext(`processing audio section ${i} of ${samp}\n${Math.round(i/samp * 10000)/100}% complete`)
         if(i % 128 == 0){await sleep(1)}
     }
+    tbuffer.push(0x00, 0xFF, 0x2F, 0x00)
     len = writeNumber([], tbuffer.length, 4)
-    MIDarray = MIDarray.concat(len ,tbuffer, [0x00, 0xFF, 0x2F, 0x00])
+    MIDarray = MIDarray.concat(len ,tbuffer)
     //console.log(MIDarray)
 
     filename = `${name1}.mid`
