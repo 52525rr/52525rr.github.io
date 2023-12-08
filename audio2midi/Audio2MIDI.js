@@ -212,14 +212,15 @@ async function processData(v){
         time += incr
         k = p((i * timeIntervalms/1000 * rate) | 0, FFTsize)
         for(let j=0; j<128; j++){
-            val = Math.sqrt(k[j]/1) * 112
+            val = Math.sqrt(k[j]*Math.sqrt(2)) * 90
             //val = k[j] * 16 * 4
             k[j] = Math.min(Math.round(val), 127)
             if (val > 127){
                 console.log("maxout" , j, val)
             }
         }
-        thres = 1
+
+        thres = 8
         for(let j=0; j<128; j++){
             n = k[j]
             if(n > thres){
