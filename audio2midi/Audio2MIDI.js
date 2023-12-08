@@ -169,9 +169,9 @@ async function processData(v){
 
                 r = ihi - ilo + 1
                 for(let j=ilo; j<ihi; j++){
-                    MIDIframe[j] += (magnitude[i]/r - MIDIframe[j])/(8*(Math.sqrt(d)))
+                    MIDIframe[j] += (magnitude[i]/r - MIDIframe[j])/(8)
                 }
-                MIDIframe[index] += (magnitude[i]/r - MIDIframe[index])/(8*(Math.sqrt(d)))
+                MIDIframe[index] += (magnitude[i]/r - MIDIframe[index])/(8)
 
             }
             //console.log(MIDIframe.slice())
