@@ -122,13 +122,13 @@ async function processData(v){
         return a;
     }
     function FFTfrom(start,size,skip){
-	tmp = []
+        tmp = []
         for(let i = start - size/2; i < start + size/2; i+=skip){
             tmp.push(audio[i] || 0)
-        }        
-	re = []
+        }
+        re = []
         im = []
-        for(let i=0; i<tmp.length; i+=skip){
+        for(let i=0; i<tmp.length; i++){
             re.push(tmp[i] || 0)
             im.push(0)
         }
@@ -216,7 +216,7 @@ async function processData(v){
             //val = k[j] * 16 * 4
             k[j] = Math.min(Math.round(val), 127)
             if (val > 127){
-                //console.log("maxout" , j, val)
+                console.log("maxout" , j, val)
             }
         }
         thres = 1
