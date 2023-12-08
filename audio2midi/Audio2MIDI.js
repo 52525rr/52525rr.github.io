@@ -122,8 +122,11 @@ async function processData(v){
         return a;
     }
     function FFTfrom(start,size,skip){
-        tmp = audio.slice(start - size/2,start+size/2);
-        re = []
+	tmp = []
+        for(let i = start - size/2; i < start + size/2; i+=skip){
+            tmp.push(audio[i] || 0)
+        }        
+	re = []
         im = []
         for(let i=0; i<tmp.length; i+=skip){
             re.push(tmp[i] || 0)
@@ -207,7 +210,7 @@ async function processData(v){
 
         time = timelast 
         time += incr
-        k = p(i * timeIntervalms/1000 * rate, FFTsize)
+        k = p((i * timeIntervalms/1000 * rate) | 0, FFTsize)
         for(let j=0; j<128; j++){
             val = Math.sqrt(k[j]/1) * 112
             //val = k[j] * 16 * 4
