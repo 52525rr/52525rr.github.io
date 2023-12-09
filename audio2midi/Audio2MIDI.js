@@ -167,7 +167,7 @@ async function processData(v){
                 ilo = Math.round(freqToMidi(n - binsizeAdjusted/2))
                 ihi = Math.round(freqToMidi(n + binsizeAdjusted/2))
 
-                r = ihi - ilo + 1
+                r = ihi - ilo + 1// average frequency bins over the frequency range it represents
                 for(let j=ilo; j<ihi; j++){
                     MIDIframe[j] += (magnitude[i]/r - MIDIframe[j])/(8)
                 }
@@ -182,19 +182,22 @@ async function processData(v){
     const FFTsize = 512
     timeIntervalms = 15
     k = 10
-
+    ////////////////////////////////////////////////////////////
+    // MThd
     MIDarray = [0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x01]
 
     tempo = 120
     PPQN = 1920
     MIDarray = writeNumber(MIDarray, PPQN, 2)
     incr = tempo/60 * PPQN * timeIntervalms/1000
-
+    ////////////////////////////////////////////////////////////
+    // MTrk
     MIDarray.push(0x4d, 0x54, 0x72, 0x6b)
     tbuffer = [0x00, 0xFF, 0x51, 0x03]
     tbuffer = writeNumber(tbuffer, 60000000/tempo, 3)
-
-    for(let i = 0; i<9; i++){
+    ////////////////////////////////////////////////////////////
+    // instrument of all channels to ocarina
+    for(let i = 0; i<16; i++){
         tbuffer.push(0, 0xC0 | i, 79)
     }
 
@@ -203,11 +206,17 @@ async function processData(v){
     function ch(n){
         return Math.min(n/16 | 0, 8)
     }
+    ////////////////////////////////////////////////////////////
+    // tp determine number of ticks in total
     samp = Math.ceil((len / rate) / (timeIntervalms / 1000))
     //samp = 1500
     //console.log(samp)
+    
+    ////////////////////////////////////////////////////////////
+    // tracks the volume of the last tick
+    sustain = new Array(128).fill(0)
     for(let i=0; i<samp; i++){
-
+        // do the fft
         time = timelast 
         time += incr
         k = p((i * timeIntervalms/1000 * rate) | 0, FFTsize)
@@ -219,25 +228,82 @@ async function processData(v){
                 console.log("maxout" , j, val)
             }
         }
-
+        // output to MIDI events
+        // k: array - of volume of each notes 
         thres = 8
         for(let j=0; j<128; j++){
+            
+            n = Math.floor((k[j])/16*2) // I THOUGHT its between 0 ... 1
+            //n = ch(k[j]
+            ln = sustain[j]
+            
+            while (n > ln){
+              tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
+              timelast = time
+              q = ln == 9 ? 8 : ln
+              tbuffer.push(0x90 | q,j,ln*8)
+              ln++
+            }
+            while (n < ln){
+              tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
+              timelast = time
+              ln--
+              q = ln == 9 ? 8 : ln
+              tbuffer.push(0x80 | q,j,ln*8)
+            }
+            
+            sustain[j] = ln
+            
+            /* OLD CODE
             n = k[j]
+            ln = sustain[j]
+            if(sustain[j] != n){
+                tbuffer.push(0x00, 0x80 | ch(ln), j, ln)
+
+                if(n > thres){
+                    tbuffer.push(0x00, 0x90 | ch(n), j, n)
+                }
+                sustain[j] = n
+            }
+            */
+        }
+        //tbuffer = writeVLQ(tbuffer, (time - timelast) | 0)
+        //tbuffer.push(0x9F, 0, 1)
+        //tbuffer.push(0x00, 0x8F, 0, 1)
+        HTMLwritetext(`processing audio section ${i} of ${samp}\n${Math.round(i/samp * 10000)/100}% complete`)
+        if(i % 128 == 0){await sleep(1)}
+    }
+    for(let j=0; j<128; j++){
+      n = Math.floor((k[j])/16*2)
+      //n = k[j]
+      ln = sustain[j]
+      
+      while (n > ln){
+        writeVLQ(tbuffer,(time-timelast)|0)
+        timelast = time
+        tbuffer.push(0x90 | ln,j,ln*8)
+        ln++
+      }
+      while (n < ln){
+        writeVLQ(tbuffer,(time-timelast)|0)
+        timelast = time
+        ln--
+        tbuffer.push(0x80 | ln,j,ln*8)
+      }
+      
+      sustain[j] = ln
+      /*
+        n = k[j]
+        ln = sustain[j]
+        if(sustain[j] != n){
+            tbuffer.push(0x00, 0x80 | ch(ln), j, ln)
+
             if(n > thres){
                 tbuffer.push(0x00, 0x90 | ch(n), j, n)
             }
+            sustain[j] = n
         }
-        tbuffer = writeVLQ(tbuffer, (time - timelast) | 0)
-        tbuffer.push(0x9F, 0, 1)
-        tbuffer.push(0x00, 0x8F, 0, 1)
-        for(let j=0; j<128; j++){
-            n = k[j]
-            if(n > thres){
-                tbuffer.push(0x00, 0x80 | ch(n), j, n)
-            }
-        }
-        HTMLwritetext(`processing audio section ${i} of ${samp}\n${Math.round(i/samp * 10000)/100}% complete`)
-        if(i % 128 == 0){await sleep(1)}
+        */
     }
     tbuffer.push(0x00, 0xFF, 0x2F, 0x00)
     len = writeNumber([], tbuffer.length, 4)
