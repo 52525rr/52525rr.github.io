@@ -59,7 +59,7 @@ function HTMLwritetext(text){
 }
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
-const audioContext = new AudioContext({sampleRate: 26000});
+const audioContext = new AudioContext({sampleRate: 34133});
 var name1; 
 input.addEventListener("input", async function(){
 	const file = input.files[0]
@@ -151,12 +151,12 @@ async function processData(v){
         d = 1;
         MIDIframe = new Array(128).fill(0)
 
-        iter = 6
+        iter = 7
         for(let i=0; i<iter; i++){
             w = Math.sqrt(i+1)
             let q = FFTfrom(start,size*d,d);
             magnitude = []
-            for(let i=0; i<q[0].length/2; i++){
+            for(let i=0; i<q[0].length/2 + 1; i++){
                 magnitude.push(Math.sqrt((q[0][i]**2) + (q[1][i]**2)))
             }
             l = magnitude.length
@@ -211,18 +211,22 @@ async function processData(v){
     samp = Math.ceil((len / rate) / (timeIntervalms / 1000))
     //samp = 1500
     //console.log(samp)
-    
+    notesustain = document.getElementById("notestustain").value
     ////////////////////////////////////////////////////////////
     // tracks the volume of the last tick
     sustain = new Array(128).fill(0)
+
+    //valtovel = [32, 45, 55, 64, 71, 78, 84, 90, 96, 101, 106, 110, 115, 119, 123];
+    valtovel = [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 127];
+
     for(let i=0; i<samp; i++){
         // do the fft
-        time = timelast 
+        //time = timelast 
         time += incr
         k = p((i * timeIntervalms/1000 * rate) | 0, FFTsize)
         for(let j=0; j<128; j++){
-            val = Math.sqrt(k[j]*Math.sqrt(2)) * 90
-            //val = k[j] * 16 * 4
+            //val = Math.sqrt(k[j]/32) * 90
+            val = Math.sqrt(k[j]) * 100
             k[j] = Math.min(Math.round(val), 127)
             if (val > 127){
                 console.log("maxout" , j, val)
@@ -230,26 +234,28 @@ async function processData(v){
         }
         // output to MIDI events
         // k: array - of volume of each notes 
-        thres = 8
+        thres = 4
+        charray = [0,1,2,3,4,5,6,7,8,10,11,12,13,14,15,15]
         for(let j=0; j<128; j++){
             
-            n = Math.floor((k[j])/16*2) // I THOUGHT its between 0 ... 1
-            //n = ch(k[j]
+            n = Math.floor((k[j])/thres) // I THOUGHT its between 0 ... 1
+            //n = Math.floor((k[j])/16*8)
             ln = sustain[j]
             
             while (n > ln){
               tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
               timelast = time
-              q = ln == 9 ? 8 : ln
-              tbuffer.push(0x90 | q,j,ln*8)
+              q = (ln == 9 ? 8 : ln)&15
+              tbuffer.push(0x90 | q,j,valtovel[ln])
               ln++
             }
             while (n < ln){
               tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
               timelast = time
               ln--
-              q = ln == 9 ? 8 : ln
-              tbuffer.push(0x80 | q,j,ln*8)
+              q = (ln == 9 ? 8 : ln)&15
+              tbuffer.push(0x80 | q,j,valtovel[ln])
+
             }
             
             sustain[j] = ln
@@ -274,21 +280,21 @@ async function processData(v){
         if(i % 128 == 0){await sleep(1)}
     }
     for(let j=0; j<128; j++){
-      n = Math.floor((k[j])/16*2)
+      n = Math.floor((k[j])/thres)
       //n = k[j]
       ln = sustain[j]
       
       while (n > ln){
         writeVLQ(tbuffer,(time-timelast)|0)
         timelast = time
-        tbuffer.push(0x90 | ln,j,ln*8)
+        tbuffer.push(0x90 | ln,j,valtovel[ln])
         ln++
       }
       while (n < ln){
         writeVLQ(tbuffer,(time-timelast)|0)
         timelast = time
         ln--
-        tbuffer.push(0x80 | ln,j,ln*8)
+        tbuffer.push(0x80 | ln,j,valtovel[ln])
       }
       
       sustain[j] = ln
