@@ -91,12 +91,18 @@ function writeByte(m,b){
     return m
 }
 function writeVLQ(m,b){
-    while(b >= 128){
-        m.push(0x80 | (b & 0x7f))
-        b >>= 7
+    c = b;
+    j = 0
+    while(c > 0){
+        c >>= 7
+        j++
     }
-    m.push(0x00 | (b & 0x7f))
-    return m
+    j = Math.max(j,1)
+    for(let i=j-1; i>-1; i--){
+        mask = (i == 0 ? 0x00: 0x80)
+        m.push(mask | ((b >> (i*7) & 0x7f)))
+    }
+  return m
 }
 function writeNumber(m,b,s){
     for(let i=s-1; i >= 0; i--){
@@ -211,11 +217,11 @@ async function processData(v){
     samp = Math.ceil((len / rate) / (timeIntervalms / 1000))
     //samp = 1500
     //console.log(samp)
-    //notesustain = document.getElementById("notestustain").value
+    notesustain = document.getElementById("notestustain").value
     ////////////////////////////////////////////////////////////
     // tracks the volume of the last tick
     sustain = new Array(128).fill(0)
-
+    timestart = new Array(128).fill(0)
     //valtovel = [32, 45, 55, 64, 71, 78, 84, 90, 96, 101, 106, 110, 115, 119, 123];
     valtovel = [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 127];
 
@@ -245,7 +251,7 @@ async function processData(v){
             while (n > ln){
               tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
               timelast = time
-              q = (ln == 9 ? 8 : ln)&15
+              q = charray[ln] || 15
               tbuffer.push(0x90 | q,j,valtovel[ln])
               ln++
             }
@@ -253,25 +259,11 @@ async function processData(v){
               tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
               timelast = time
               ln--
-              q = (ln == 9 ? 8 : ln)&15
+              q = charray[ln] || 15
               tbuffer.push(0x80 | q,j,valtovel[ln])
-
             }
-            
+
             sustain[j] = ln
-            
-            /* OLD CODE
-            n = k[j]
-            ln = sustain[j]
-            if(sustain[j] != n){
-                tbuffer.push(0x00, 0x80 | ch(ln), j, ln)
-
-                if(n > thres){
-                    tbuffer.push(0x00, 0x90 | ch(n), j, n)
-                }
-                sustain[j] = n
-            }
-            */
         }
         //tbuffer = writeVLQ(tbuffer, (time - timelast) | 0)
         //tbuffer.push(0x9F, 0, 1)
@@ -280,36 +272,25 @@ async function processData(v){
         if(i % 128 == 0){await sleep(1)}
     }
     for(let j=0; j<128; j++){
-      n = Math.floor((k[j])/thres)
-      //n = k[j]
-      ln = sustain[j]
-      
-      while (n > ln){
-        writeVLQ(tbuffer,(time-timelast)|0)
-        timelast = time
-        tbuffer.push(0x90 | ln,j,valtovel[ln])
-        ln++
-      }
-      while (n < ln){
-        writeVLQ(tbuffer,(time-timelast)|0)
-        timelast = time
-        ln--
-        tbuffer.push(0x80 | ln,j,valtovel[ln])
-      }
-      
-      sustain[j] = ln
-      /*
-        n = k[j]
-        ln = sustain[j]
-        if(sustain[j] != n){
-            tbuffer.push(0x00, 0x80 | ch(ln), j, ln)
-
-            if(n > thres){
-                tbuffer.push(0x00, 0x90 | ch(n), j, n)
-            }
-            sustain[j] = n
+        n = Math.floor((k[j])/thres) 
+        ln = sustain[j] || 15
+        
+        //while (n > ln){
+        //  tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
+        //  timelast = time
+        //  q = charray[ln]
+        //  tbuffer.push(0x90 | q,j,valtovel[ln])
+        //  ln++
+        //}
+        while (n < ln){
+          tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
+          timelast = time
+          ln--
+          q = charray[ln] || 15
+          tbuffer.push(0x80 | q,j,valtovel[ln])
         }
-        */
+        
+        sustain[j] = ln
     }
     tbuffer.push(0x00, 0xFF, 0x2F, 0x00)
     len = writeNumber([], tbuffer.length, 4)
