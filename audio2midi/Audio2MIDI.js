@@ -211,7 +211,7 @@ async function processData(v){
     samp = Math.ceil((len / rate) / (timeIntervalms / 1000))
     //samp = 1500
     //console.log(samp)
-    notesustain = document.getElementById("notestustain").value
+    //notesustain = document.getElementById("notestustain").value
     ////////////////////////////////////////////////////////////
     // tracks the volume of the last tick
     sustain = new Array(128).fill(0)
