@@ -175,9 +175,9 @@ async function processData(v){
 
                 r = ihi - ilo + 1// average frequency bins over the frequency range it represents
                 for(let j=ilo; j<ihi; j++){
-                    MIDIframe[j] += (magnitude[i]/r - MIDIframe[j])/(8)
+                    MIDIframe[j] += (magnitude[i]/r - MIDIframe[j])/(16*r)
                 }
-                MIDIframe[index] += (magnitude[i]/r - MIDIframe[index])/(8)
+                MIDIframe[index] += (magnitude[i]/r - MIDIframe[index])/(16*r)
 
             }
             //console.log(MIDIframe.slice())
@@ -224,6 +224,7 @@ async function processData(v){
     timestart = new Array(128).fill(0)
     //valtovel = [32, 45, 55, 64, 71, 78, 84, 90, 96, 101, 106, 110, 115, 119, 123];
     valtovel = [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 127];
+    //valtovel = [32, 45, 55, 64, 71, 78, 84, 90, 96, 101, 106, 110, 115, 119, 123];
 
     for(let i=0; i<samp; i++){
         // do the fft
@@ -232,7 +233,8 @@ async function processData(v){
         k = p((i * timeIntervalms/1000 * rate) | 0, FFTsize)
         for(let j=0; j<128; j++){
             //val = Math.sqrt(k[j]/32) * 90
-            val = Math.sqrt(k[j]/Math.sqrt(2)) * 100
+            val = Math.sqrt(k[j]) * 100
+
             k[j] = Math.min(Math.round(val), 127)
             if (val > 127){
                 console.log("maxout" , j, val)
@@ -251,7 +253,7 @@ async function processData(v){
             while (n > ln){
               tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
               timelast = time
-              q = charray[ln] || 15
+              q = charray[ln] || 0
               tbuffer.push(0x90 | q,j,valtovel[ln])
               ln++
             }
@@ -259,7 +261,7 @@ async function processData(v){
               tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
               timelast = time
               ln--
-              q = charray[ln] || 15
+              q = charray[ln] || 0
               tbuffer.push(0x80 | q,j,valtovel[ln])
             }
 
