@@ -59,7 +59,7 @@ function HTMLwritetext(text){
 }
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
-const audioContext = new AudioContext({sampleRate: 34133});
+const audioContext = new AudioContext({sampleRate: 36864});
 var name1; 
 input.addEventListener("input", async function(){
 	const file = input.files[0]
@@ -186,7 +186,7 @@ async function processData(v){
         return MIDIframe
     }
     const FFTsize = 512
-    timeIntervalms = 15
+    timeIntervalms = 1/72 * 1000
     k = 10
     ////////////////////////////////////////////////////////////
     // MThd
@@ -209,9 +209,6 @@ async function processData(v){
 
     time = 0
     timelast = 0
-    function ch(n){
-        return Math.min(n/16 | 0, 8)
-    }
     ////////////////////////////////////////////////////////////
     // tp determine number of ticks in total
     samp = Math.ceil((len / rate) / (timeIntervalms / 1000))
@@ -223,8 +220,8 @@ async function processData(v){
     sustain = new Array(128).fill(0)
     timestart = new Array(128).fill(0)
     //valtovel = [32, 45, 55, 64, 71, 78, 84, 90, 96, 101, 106, 110, 115, 119, 123];
-    valtovel = [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 127];
-    //valtovel = [32, 45, 55, 64, 71, 78, 84, 90, 96, 101, 106, 110, 115, 119, 123];
+    //valtovel = [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 127];
+    valtovel = [32, 45, 55, 64, 71, 78, 84, 90, 96, 101, 106, 110, 115, 119, 123];
 
     for(let i=0; i<samp; i++){
         // do the fft
@@ -233,9 +230,10 @@ async function processData(v){
         k = p((i * timeIntervalms/1000 * rate) | 0, FFTsize)
         for(let j=0; j<128; j++){
             //val = Math.sqrt(k[j]/32) * 90
-            val = Math.sqrt(k[j]) * 100
+            //val = Math.sqrt(k[j]) * 100
+            val = (k[j]) * 175
 
-            k[j] = Math.min(Math.round(val), 127)
+            k[j] = Math.max(Math.min(Math.round(val), 127),0)
             if (val > 127){
                 console.log("maxout" , j, val)
             }
@@ -275,7 +273,7 @@ async function processData(v){
     }
     for(let j=0; j<128; j++){
         n = Math.floor((k[j])/thres) 
-        ln = sustain[j] || 15
+        ln = sustain[j] || 0
         
         //while (n > ln){
         //  tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
@@ -284,11 +282,11 @@ async function processData(v){
         //  tbuffer.push(0x90 | q,j,valtovel[ln])
         //  ln++
         //}
-        while (n < ln){
+        while (0 < ln){
           tbuffer = writeVLQ(tbuffer,(time-timelast)|0)
           timelast = time
           ln--
-          q = charray[ln] || 15
+          q = charray[ln] || 0
           tbuffer.push(0x80 | q,j,valtovel[ln])
         }
         
