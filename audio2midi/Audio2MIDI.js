@@ -33,18 +33,18 @@ function FFT(a){
 
         for(let i2 = 0; i2 < length/size/2; i2++){
             for(let i3 = 0; i3 < size; i3++){
-                wr = Math.cos(Math.PI * k / size);
-                wi = Math.sin(Math.PI * k / size);
+                wr = Math.cos(Math.PI * k / size)
+                wi = Math.sin(Math.PI * k / size)
 
                 E_Real = ar[k]
                 E_Imag = ai[k]
-                O_Real = ar[k+size]*wr - ai[k+size]*wi;
-                O_Imag = ar[k+size]*wi + ai[k+size]*wr;
+                O_Real = ar[k+size]*wr - ai[k+size]*wi
+                O_Imag = ar[k+size]*wi + ai[k+size]*wr
 
-                ar[k]      = E_Real + O_Real;
-                ai[k]      = E_Imag + O_Imag;
-                ar[k+size] = E_Real - O_Real;
-                ai[k+size] = E_Imag - O_Imag;
+                ar[k]      = E_Real + O_Real
+                ai[k]      = E_Imag + O_Imag
+                ar[k+size] = E_Real - O_Real
+                ai[k+size] = E_Imag - O_Imag
                 k++
             }
             k += size
@@ -130,7 +130,12 @@ async function processData(v){
     function FFTfrom(start,size,skip){
         tmp = []
         for(let i = start - size/2; i < start + size/2; i+=skip){
-            tmp.push(audio[i] || 0)
+            s=0
+            for(let j=i; j<i+skip; j++){
+                s += audio[j]/skip
+            }
+            tmp.push(s || 0)
+
         }
         re = []
         im = []
@@ -140,7 +145,7 @@ async function processData(v){
         }
 
         q = FFT([applyWindow(re),im]);
-        div = Math.sqrt(size/skip);
+        div = q[0].length;
         //div = size;
         for(let i = 0; i < size/skip; i++){
             q[0][i] /= div;
@@ -175,9 +180,9 @@ async function processData(v){
 
                 r = ihi - ilo + 1// average frequency bins over the frequency range it represents
                 for(let j=ilo; j<ihi; j++){
-                    MIDIframe[j] += (magnitude[i]/r - MIDIframe[j])/(16*r)
+                    MIDIframe[j] += (magnitude[i]/r - MIDIframe[j])/(5)
                 }
-                MIDIframe[index] += (magnitude[i]/r - MIDIframe[index])/(16*r)
+                MIDIframe[index] += (magnitude[i]/r - MIDIframe[index])/(5)
 
             }
             //console.log(MIDIframe.slice())
@@ -185,7 +190,7 @@ async function processData(v){
         }
         return MIDIframe
     }
-    const FFTsize = 512
+    const FFTsize = 256
     timeIntervalms = 1/72 * 1000
     k = 10
     ////////////////////////////////////////////////////////////
@@ -227,11 +232,13 @@ async function processData(v){
         // do the fft
         //time = timelast 
         time += incr
+        thres = 4
+
         k = p((i * timeIntervalms/1000 * rate) | 0, FFTsize)
         for(let j=0; j<128; j++){
             //val = Math.sqrt(k[j]/32) * 90
             //val = Math.sqrt(k[j]) * 100
-            val = (k[j]) * 175
+            val = (k[j]) * 256 * 16
 
             k[j] = Math.max(Math.min(Math.round(val), 127),0)
             if (val > 127){
@@ -240,7 +247,6 @@ async function processData(v){
         }
         // output to MIDI events
         // k: array - of volume of each notes 
-        thres = 4
         charray = [0,1,2,3,4,5,6,7,8,10,11,12,13,14,15,15]
         for(let j=0; j<128; j++){
             
@@ -265,14 +271,12 @@ async function processData(v){
 
             sustain[j] = ln
         }
-        //tbuffer = writeVLQ(tbuffer, (time - timelast) | 0)
-        //tbuffer.push(0x9F, 0, 1)
-        //tbuffer.push(0x00, 0x8F, 0, 1)
+
         HTMLwritetext(`processing audio section ${i} of ${samp}\n${Math.round(i/samp * 10000)/100}% complete`)
         if(i % 128 == 0){await sleep(1)}
     }
     for(let j=0; j<128; j++){
-        n = Math.floor((k[j])/thres) 
+        n = Math.round((k[j])/thres) 
         ln = sustain[j] || 0
         
         //while (n > ln){
