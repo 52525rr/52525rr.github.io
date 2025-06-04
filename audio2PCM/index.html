@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<audio id="audio"></audio>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<h2>
+		audio to PCM
+	</h2>
+
+    <p id = "text">
+		select an audio file thats not a MIDI file
+	</p>
+	<title>Document</title>
+</head>
+	<p>
+		samplerate in hz
+		<input id="rate" type="number" value = 16000>
+	</p>
+	
+
+<body>
+    <input type="file", id="input", accept="audio/*, video/*"></input><br>
+	<textarea id="text1" name="output" rows="10" cols="87" style="width: 700px;"></textarea>
+</body>
+
+<p>
+	made by 52525rr
+</p>
+<script src = "./Audio2MIDI.js"> </script>
+</html>
